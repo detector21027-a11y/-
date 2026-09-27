@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เลือกการ์ด</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --felt-dark: #0a2a20;
+    --felt-light: #135a41;
+    --gold: #d8b45c;
+    --gold-soft: rgba(216,180,92,0.18);
+    --cream: #f4ecd8;
+    --muted: rgba(244,236,216,0.62);
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background:
+      radial-gradient(circle at 50% 20%, rgba(216,180,92,0.10), transparent 55%),
+      radial-gradient(circle at 50% 100%, rgba(0,0,0,0.55), transparent 60%),
+      linear-gradient(160deg, var(--felt-light), var(--felt-dark));
+    color: var(--cream);
+    font-family: 'Inter', sans-serif;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+  }
+  .stage {
+    width: 100%;
+    max-width: 620px;
+    text-align: center;
+  }
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: clamp(24px, 5.5vw, 34px);
+    margin: 0 0 10px;
+    letter-spacing: 0.02em;
+  }
+  p.sub {
+    color: var(--muted);
+    margin: 0 0 40px;
+    font-size: 15px;
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 18px;
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  @media (max-width: 480px) {
+    .cards { grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .suit { font-size: 38px !important; }
+  }
+  .card-slot { perspective: 900px; }
+  .playing-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    aspect-ratio: 5 / 7;
+    width: 100%;
+    border-radius: 16px;
+    border: 2px solid var(--gold);
+    background:
+      repeating-linear-gradient(45deg, var(--gold-soft) 0 2px, transparent 2px 16px),
+      repeating-linear-gradient(-45deg, var(--gold-soft) 0 2px, transparent 2px 16px),
+      linear-gradient(160deg, #17563e, #0b2e22);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.45), inset 0 0 0 5px rgba(0,0,0,0.18);
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
+  }
+  .playing-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 20px 38px rgba(0,0,0,0.55), inset 0 0 0 5px rgba(0,0,0,0.18);
+  }
+  .playing-card:active { transform: translateY(-2px) scale(1.01); }
+  .playing-card.flipping {
+    transform: rotateY(90deg) scale(0.9);
+    opacity: 0;
+  }
+  .playing-card .mark {
+    position: absolute;
+    font-family: 'Cinzel', serif;
+    font-size: 15px;
+    color: var(--gold);
+    opacity: 0.85;
+  }
+  .playing-card .mark.tl { top: 12px; left: 14px; }
+  .playing-card .mark.br { bottom: 12px; right: 14px; transform: rotate(180deg); }
+  .playing-card .suit {
+    font-size: 54px;
+    color: var(--gold);
+    opacity: 0.9;
+  }
+  .card-caption {
+    margin-top: 14px;
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+  .result { animation: reveal 0.4s ease; }
+  @keyframes reveal {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .result .emoji {
+    font-size: 92px;
+    line-height: 1;
+    margin-bottom: 22px;
+    filter: drop-shadow(0 8px 18px rgba(0,0,0,0.4));
+  }
+  .result h2 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(20px, 5.5vw, 27px);
+    margin: 0 0 10px;
+  }
+  .divider {
+    width: 64px;
+    height: 2px;
+    background: var(--gold);
+    margin: 18px auto 22px;
+    opacity: 0.7;
+  }
+  .locked-note {
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage"></div>
+
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var STORAGE_KEY = 'card-pick-locked';
+  var LINK_URL = 'https://gift.truemoney.com/campaign/?v=01a0e3eb13c670a9a2cc909ef57c07e5e45';
+  var LINK_URL_2 = 'https://tmn.app.link/kcfdjsfsM6b';
+
+  function renderLocked() {
+    stage.innerHTML =
+      '<h1>เข้ามาแล้วครั้งนึง</h1>' +
+      '<div class="divider"></div>' +
+      '<p class="locked-note">คุณเลือกการ์ดไปแล้ว ไม่สามารถเลือกใหม่ได้อีก</p>';
+  }
+
+  function renderCards() {
+    stage.innerHTML =
+      '<h1>เลือกการ์ดใบเดียว</h1>' +
+      '<p class="sub">เลือกได้เพียงครั้งเดียวเท่านั้น</p>' +
+      '<div class="cards">' +
+        '<div>' +
+          '<div class="card-slot"><button class="playing-card" id="cardA" aria-label="การ์ดที่ 1">' +
+            '<span class="mark tl">1</span><span class="suit">♠</span><span class="mark br">1</span>' +
+          '</button></div>' +
+          '<div class="card-caption">การ์ดที่ 1</div>' +
+        '</div>' +
+        '<div>' +
+          '<div class="card-slot"><a class="playing-card" id="cardB" href="' + LINK_URL + '" aria-label="การ์ดที่ 2">' +
+            '<span class="mark tl">2</span><span class="suit">♦</span><span class="mark br">2</span>' +
+          '</a></div>' +
+          '<div class="card-caption">การ์ดที่ 2</div>' +
+        '</div>' +
+        '<div>' +
+          '<div class="card-slot"><a class="playing-card" id="cardC" href="' + LINK_URL_2 + '" aria-label="การ์ดที่ 3">' +
+            '<span class="mark tl">3</span><span class="suit">♥</span><span class="mark br">3</span>' +
+          '</a></div>' +
+          '<div class="card-caption">การ์ดที่ 3</div>' +
+        '</div>' +
+      '</div>';
+
+    var cardA = document.getElementById('cardA');
+    var cardB = document.getElementById('cardB');
+    var cardC = document.getElementById('cardC');
+
+    cardA.addEventListener('click', function () {
+      cardA.classList.add('flipping');
+      lock();
+      setTimeout(renderResult, 240);
+    });
+    cardB.addEventListener('click', function () {
+      lock();
+    });
+    cardC.addEventListener('click', function () {
+      lock();
+    });
+  }
+
+  function renderResult() {
+    stage.innerHTML =
+      '<div class="result">' +
+        '<div class="emoji">🖕</div>' +
+        '<h2>เลือกผิดครับไอโง่</h2>' +
+        '<div class="divider"></div>' +
+        '<p class="locked-note">คุณเลือกไปแล้ว จะเข้ามาเลือกใหม่อีกไม่ได้</p>' +
+      '</div>';
+  }
+
+  function lock() {
+    try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) {}
+  }
+
+  function isLocked() {
+    try { return localStorage.getItem(STORAGE_KEY) === '1'; } catch (e) { return false; }
+  }
+
+  if (isLocked()) {
+    renderLocked();
+  } else {
+    renderCards();
+  }
+})();
+</script>
+
+</body>
+</html>
